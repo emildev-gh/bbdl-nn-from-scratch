@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Lint",
+      "type": "shell",
+      "command": "uv run ruff check .",
+      "problemMatcher": "$python"
+    },
+    {
+      "label": "Check formatting",
+      "type": "shell",
+      "command": "uv run ruff format --check .",
+      "problemMatcher": "$python"
+    },
+    {
+      "label": "Run project",
+      "type": "shell",
+      "command": "uv run bbdl-nn-from-scratch",
+      "dependsOn": ["Lint", "Check formatting"],
+      "dependsOrder": "sequence",
+      "problemMatcher": "$python"
+    }
+  ]
+}
