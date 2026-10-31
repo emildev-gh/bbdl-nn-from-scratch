@@ -16,7 +16,7 @@
     {
       "label": "Run project",
       "type": "shell",
-      "command": "uv run bbdl-nn-from-scratch",
+      "command": "uv run dev",
       "dependsOn": ["Lint", "Check formatting"],
       "dependsOrder": "sequence",
       "problemMatcher": "$python"
