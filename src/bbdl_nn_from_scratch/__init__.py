@@ -1,2 +1,6 @@
+from .neuralnetwork import NeuralNetwork
+
+
 def main() -> None:
-    print("Hello from bbdl-nn-from-scratch!")
+    nn = NeuralNetwork(2, [3], 2)
+    print(nn.forward([2, 3]))
