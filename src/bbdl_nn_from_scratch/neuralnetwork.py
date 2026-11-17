@@ -1,5 +1,5 @@
 from .layer import Layer
-from .types import ActivationConfig
+from .types import ActivationConfig, LossFunction
 
 
 class NeuralNetwork:
@@ -9,6 +9,7 @@ class NeuralNetwork:
         hidden_size: list[int],
         output_size: int,
         activation_config: ActivationConfig,
+        loss_function: LossFunction,
     ) -> None:
         self.layers = []
         for num_nodes in hidden_size:
@@ -25,10 +26,9 @@ class NeuralNetwork:
                 "output", activation_config[1], self.layers[-1].num_nodes, output_size
             )
         )
+        self.loss_function = loss_function
 
     def forward(self, inputs: list[float]) -> list[float]:
         for index, layer in enumerate(self.layers):
-            layer.calculate_outputs(
-                inputs if index == 0 else self.layers[index - 1].outputs
-            )
+            layer.calc_outputs(inputs if index == 0 else self.layers[index - 1].outputs)
         return self.layers[-1].outputs
