@@ -1,6 +1,5 @@
-from .neuralnetwork import NeuralNetwork
+from .aufgaben import aufgabe3
 
 
 def main() -> None:
-    nn = NeuralNetwork(2, [3], 2)
-    print(nn.forward([2, 3]))
+    aufgabe3.main()

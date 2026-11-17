@@ -1,17 +1,19 @@
 import random
 
 from .activation import activation
-from .types import LayerType
+from .types import ActivationFunction, LayerType
 
 
 class Layer:
     def __init__(
         self,
         layer_type: LayerType,
+        activation_function: ActivationFunction,
         num_inputs: int,
         num_nodes: int,
     ):
         self.layer_type: LayerType = layer_type
+        self.activation_function: ActivationFunction = activation_function
         self.num_inputs = num_inputs
         self.num_nodes = num_nodes
         self.biases = [0.0 for _ in range(num_nodes)]
@@ -25,10 +27,16 @@ class Layer:
         if len(inputs) != self.num_inputs:
             raise ValueError("num_inputs doesn't match len(inputs)")
 
+        # calculate nets
         for node in range(self.num_nodes):
-            weightedInputs = 0
+            weighted_inputs = 0.0
             for input_index, input_value in enumerate(inputs):
-                weightedInputs += input_value * self.weights[node][input_index]
-            self.net[node] = weightedInputs + self.biases[node]
-            self.outputs[node] = activation(self.layer_type, self.net[node])
+                weighted_inputs += input_value * self.weights[node][input_index]
+            self.net[node] = weighted_inputs + self.biases[node]
+
+        # calculate outputs
+        for node in range(self.num_nodes):
+            self.outputs[node] = activation(
+                self.activation_function, self.net[node], self.net
+            )
         return self.outputs
