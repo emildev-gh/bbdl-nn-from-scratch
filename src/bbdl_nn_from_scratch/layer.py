@@ -41,14 +41,10 @@ class Layer:
 
         # calculate outputs
         for node in range(self.num_nodes):
-            self.outputs[node] = activation(
-                self.activation_function, self.net[node], self.net
-            )
+            self.outputs[node] = activation(self.activation_function, self.net[node], self.net)
         return self.outputs
 
-    def calc_error_signals(
-        self, loss_function: LossFunction, target_value: list[float]
-    ):
+    def calc_error_signals(self, loss_function: LossFunction, target_value: list[float]):
         if self.layer_type == "output":
             for node in range(self.num_nodes):
                 derived_activation = (

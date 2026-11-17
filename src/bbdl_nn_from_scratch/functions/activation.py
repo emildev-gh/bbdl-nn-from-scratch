@@ -50,9 +50,7 @@ def activation(
             if all_values is None:
                 raise TypeError("softmax requires all output values")
             return (
-                softmax_derivative(value, all_values)
-                if derivative
-                else softmax(value, all_values)
+                softmax_derivative(value, all_values) if derivative else softmax(value, all_values)
             )
         case _:
             raise ValueError(f"Unsupported activation function: {function}")

@@ -22,9 +22,7 @@ class NeuralNetwork:
                 )
             )
         self.layers.append(
-            Layer(
-                "output", activation_config[1], self.layers[-1].num_nodes, output_size
-            )
+            Layer("output", activation_config[1], self.layers[-1].num_nodes, output_size)
         )
         self.loss_function = loss_function
 
