@@ -1,6 +1,6 @@
 import random
 
-from .activation import activation
+from .functions.activation import activation
 from .types import ActivationFunction, LayerType
 
 

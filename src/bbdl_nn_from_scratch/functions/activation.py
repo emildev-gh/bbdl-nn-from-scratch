@@ -1,6 +1,6 @@
 from math import exp
 
-from .types import ActivationFunction
+from ..types import ActivationFunction
 
 
 def relu(value: float) -> float:
@@ -30,8 +30,8 @@ def softmax(value: float, all_values: list[float]) -> float:
     return numerator / denominator
 
 
-# this needs the already calculated softmax value
-def softmax_derivative(probability: float) -> float:
+def softmax_derivative(value: float, all_values: list[float]) -> float:
+    probability = softmax(value, all_values)
     return probability * (1.0 - probability)
 
 
@@ -39,27 +39,20 @@ def activation(
     function: ActivationFunction,
     value: float,
     all_values: list[float] | None = None,
+    derivative: bool = False,
 ) -> float:
     match function:
         case "relu":
-            return relu(value)
+            return relu_derivative(value) if derivative else relu(value)
         case "sigmoid":
-            return sigmoid(value)
+            return sigmoid_derivative(value) if derivative else sigmoid(value)
         case "softmax":
             if all_values is None:
                 raise TypeError("softmax requires all output values")
-            return softmax(value, all_values)
-        case _:
-            raise ValueError(f"Unsupported activation function: {function}")
-
-
-def activation_derivative(function: ActivationFunction, value: float) -> float:
-    match function:
-        case "relu":
-            return relu_derivative(value)
-        case "sigmoid":
-            return sigmoid_derivative(value)
-        case "softmax":
-            return softmax_derivative(value)
+            return (
+                softmax_derivative(value, all_values)
+                if derivative
+                else softmax(value, all_values)
+            )
         case _:
             raise ValueError(f"Unsupported activation function: {function}")
