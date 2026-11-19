@@ -57,6 +57,8 @@ class NeuralNetwork:
             for instance in range(len(input_data)):
                 self.forward(input_data[instance])
                 self.backward(target_data[instance])
+                for layer in self.layers:
+                    layer.apply_gradients()
 
     def printNetwork(self):
         print(f"Input ({self.layers[0].num_inputs}) [Last used input values: {self.last_inputs}]")

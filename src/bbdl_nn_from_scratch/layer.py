@@ -1,5 +1,6 @@
 import random
 
+from .constants import LEARNING_RATE
 from .functions.activation import activation
 from .functions.loss import loss
 from .types import ActivationFunction, LayerType, LossFunction
@@ -84,4 +85,11 @@ class Layer:
             for input_node in range(self.num_inputs):
                 self.gradients[node][input_node] = (
                     self.error_signals[node] * prev_outputs[input_node]
+                )
+
+    def apply_gradients(self):
+        for node in range(self.num_nodes):
+            for input in range(self.num_inputs):
+                self.weights[node][input] = (
+                    self.weights[node][input] - LEARNING_RATE * self.gradients[node][input]
                 )
