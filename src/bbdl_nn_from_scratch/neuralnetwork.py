@@ -30,8 +30,10 @@ class NeuralNetwork:
             Layer("output", activation_config[1], self.layers[-1].num_nodes, output_size)
         )
         self.loss_function: LossFunction = loss_function
+        self.last_inputs: list[float] | None = None  # Caching last used inputs for a forward pass
 
     def forward(self, input_values: list[float]) -> list[float]:
+        self.last_inputs = input_values.copy()
         for index, layer in enumerate(self.layers):
             layer.calc_outputs(input_values if index == 0 else self.layers[index - 1].outputs)
         return self.layers[-1].outputs
@@ -40,6 +42,11 @@ class NeuralNetwork:
         for index, layer in reversed(list(enumerate(self.layers))):
             next_layer = self.layers[index + 1] if index + 1 < len(self.layers) else None
             layer.calc_error_signals(self.loss_function, target_values, next_layer)
+        if self.last_inputs is None:
+            raise ValueError("forward must be called before backward")
+        for index, layer in enumerate(self.layers):
+            previous_outputs = self.last_inputs if index == 0 else self.layers[index - 1].outputs
+            layer.calc_gradients(previous_outputs)
 
     def train(self, training_data: TrainingData, epochs: int):
         if epochs < 1:
@@ -52,8 +59,7 @@ class NeuralNetwork:
                 self.backward(target_data[instance])
 
     def printNetwork(self):
-        print(f"Input ({self.layers[0].num_inputs})")
-
+        print(f"Input ({self.layers[0].num_inputs}) [Last used input values: {self.last_inputs}]")
         for index, layer in enumerate(self.layers, start=1):
             print("    |")
             print(

@@ -21,12 +21,15 @@ class Layer:
         self.biases = [0.0 for _ in range(num_nodes)]
         self.weights = [
             [random.uniform(-1, 1) for _ in range(num_inputs)] for _ in range(num_nodes)
-        ]  # [node][weight]; weights are for the node's inputs
+        ]  # [node][weight]; weight per input
         # Inference
         self.outputs = [0.0 for _ in range(num_nodes)]
         self.net = [0.0 for _ in range(num_nodes)]
         # Learning
         self.error_signals = [0.0 for _ in range(num_nodes)]
+        self.gradients = [
+            [0.0 for _ in range(num_inputs)] for _ in range(num_nodes)
+        ]  # [node][gradient]; gradient per input
 
     def calc_outputs(self, inputs: list[float]) -> list[float]:
         if len(inputs) != self.num_inputs:
@@ -73,3 +76,12 @@ class Layer:
                     self.activation_function, self.net[node], self.net, True
                 )
                 self.error_signals[node] = derived_activation * next_layer_weighted_error_signals
+
+    def calc_gradients(self, prev_outputs: list[float]):
+        if len(prev_outputs) != self.num_inputs:
+            raise ValueError("previous outputs don't match num_inputs")
+        for node in range(self.num_nodes):
+            for input_node in range(self.num_inputs):
+                self.gradients[node][input_node] = (
+                    self.error_signals[node] * prev_outputs[input_node]
+                )
