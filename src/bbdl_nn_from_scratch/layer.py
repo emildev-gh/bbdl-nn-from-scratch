@@ -21,7 +21,7 @@ class Layer:
         self.biases = [0.0 for _ in range(num_nodes)]
         self.weights = [
             [random.uniform(-1, 1) for _ in range(num_inputs)] for _ in range(num_nodes)
-        ]  # [node][weight]
+        ]  # [node][weight]; weights are for the node's inputs
         # Inference
         self.outputs = [0.0 for _ in range(num_nodes)]
         self.net = [0.0 for _ in range(num_nodes)]
@@ -44,17 +44,32 @@ class Layer:
             self.outputs[node] = activation(self.activation_function, self.net[node], self.net)
         return self.outputs
 
-    def calc_error_signals(self, loss_function: LossFunction, target_value: list[float]):
+    def calc_error_signals(
+        self, loss_function: LossFunction, target_value: list[float], next_layer: Layer | None
+    ):
         if self.layer_type == "output":
             for node in range(self.num_nodes):
                 derived_activation = (
                     activation(self.activation_function, self.net[node], self.net, True)
                     if loss_function == "SSE"
                     else None
-                )
+                )  # this is only needed if using SSE in output layer
                 self.error_signals[node] = loss(
                     loss_function,
                     self.outputs[node],
                     target_value[node],
                     derived_activation,
                 )
+        else:
+            if next_layer is None:
+                raise ValueError("next_layer is needed for hidden layers")
+            for node in range(self.num_nodes):
+                next_layer_weighted_error_signals = 0.0
+                for next_node in range(next_layer.num_nodes):
+                    next_layer_weighted_error_signals += (
+                        next_layer.weights[next_node][node] * next_layer.error_signals[next_node]
+                    )
+                derived_activation = activation(
+                    self.activation_function, self.net[node], self.net, True
+                )
+                self.error_signals[node] = derived_activation * next_layer_weighted_error_signals

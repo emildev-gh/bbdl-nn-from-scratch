@@ -1,6 +1,11 @@
 from .layer import Layer
 from .types import ActivationConfig, LossFunction
 
+# this currently only support these configurations:
+# - hidden: relu or sigmoid
+# - output: sigmoid/relu + SSE
+# - output: softmax + CCE-SOFTMAX
+
 
 class NeuralNetwork:
     def __init__(
