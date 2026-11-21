@@ -28,6 +28,7 @@ class Layer:
         self.net = [0.0 for _ in range(num_nodes)]
         # Learning
         self.error_signals = [0.0 for _ in range(num_nodes)]
+        self.bias_gradients = [0.0 for _ in range(num_nodes)]
         self.gradients = [
             [0.0 for _ in range(num_inputs)] for _ in range(num_nodes)
         ]  # [node][gradient]; gradient per input
@@ -82,6 +83,7 @@ class Layer:
         if len(prev_outputs) != self.num_inputs:
             raise ValueError("previous outputs don't match num_inputs")
         for node in range(self.num_nodes):
+            self.bias_gradients[node] = self.error_signals[node]
             for input_node in range(self.num_inputs):
                 self.gradients[node][input_node] = (
                     self.error_signals[node] * prev_outputs[input_node]
@@ -89,6 +91,9 @@ class Layer:
 
     def apply_gradients(self):
         for node in range(self.num_nodes):
+            self.biases[node] = (
+                self.biases[node] - LEARNING_RATE * self.bias_gradients[node]
+            )
             for input in range(self.num_inputs):
                 self.weights[node][input] = (
                     self.weights[node][input] - LEARNING_RATE * self.gradients[node][input]
