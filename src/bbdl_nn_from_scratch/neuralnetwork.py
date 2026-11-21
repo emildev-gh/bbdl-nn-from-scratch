@@ -1,5 +1,7 @@
+import random
 from pathlib import Path
 
+from .constants import RANDOM_SEED
 from .helper import (
     extract_input_data,
     extract_target_data,
@@ -32,6 +34,7 @@ class NeuralNetwork:
             loss_function,
         )
 
+        random.seed(RANDOM_SEED)
         self.layers: list[Layer] = []
         for num_nodes in hidden_size:
             self.layers.append(

@@ -1,4 +1,43 @@
-from .types import ActivationConfig, InferenceData, LossFunction, TrainingData
+import random
+from math import sqrt
+
+from .types import (
+    ActivationConfig,
+    ActivationFunction,
+    InferenceData,
+    LossFunction,
+    TrainingData,
+)
+
+
+def initialize_weights(
+    activation_function: ActivationFunction,
+    num_inputs: int,
+    num_nodes: int,
+) -> list[list[float]]:
+    if num_inputs < 1:
+        raise ValueError("num_inputs must be greater than 0")
+    if num_nodes < 1:
+        raise ValueError("num_nodes must be greater than 0")
+
+    if activation_function == "relu":
+        standard_deviation = sqrt(2.0 / num_inputs)
+        weights = [
+            [random.gauss(0.0, standard_deviation) for _ in range(num_inputs)]
+            for _ in range(num_nodes)
+        ]
+    else:
+        limit = 1.0 / sqrt(num_inputs)
+        weights = [
+            [random.uniform(-limit, limit) for _ in range(num_inputs)]
+            for _ in range(num_nodes)
+        ]
+
+    for node_weights in weights:
+        for index, weight in enumerate(node_weights):
+            if weight == 0.0:
+                node_weights[index] = 0.01
+    return weights
 
 
 def extract_input_data(training_data: TrainingData) -> InferenceData:

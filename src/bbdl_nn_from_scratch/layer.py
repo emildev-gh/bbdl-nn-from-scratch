@@ -1,8 +1,7 @@
-import random
-
 from .constants import LEARNING_RATE
 from .functions.activation import activation
 from .functions.loss import loss
+from .helper import initialize_weights
 from .types import ActivationFunction, LayerType, LossFunction
 
 
@@ -20,18 +19,16 @@ class Layer:
         self.num_inputs = num_inputs
         self.num_nodes = num_nodes
         self.biases = [0.0 for _ in range(num_nodes)]
-        self.weights = [
-            [random.uniform(-1, 1) for _ in range(num_inputs)] for _ in range(num_nodes)
-        ]  # [node][weight]; weight per input
+        # weights: [node][weight]; weight per input
+        self.weights = initialize_weights(activation_function, num_inputs, num_nodes)
         # Inference
         self.outputs = [0.0 for _ in range(num_nodes)]
         self.net = [0.0 for _ in range(num_nodes)]
         # Learning
         self.error_signals = [0.0 for _ in range(num_nodes)]
         self.bias_gradients = [0.0 for _ in range(num_nodes)]
-        self.gradients = [
-            [0.0 for _ in range(num_inputs)] for _ in range(num_nodes)
-        ]  # [node][gradient]; gradient per input
+        # gradients: [node][gradient]; gradient per input
+        self.gradients = [[0.0 for _ in range(num_inputs)] for _ in range(num_nodes)]
 
     def calc_outputs(self, inputs: list[float]) -> list[float]:
         if len(inputs) != self.num_inputs:
@@ -91,9 +88,7 @@ class Layer:
 
     def apply_gradients(self):
         for node in range(self.num_nodes):
-            self.biases[node] = (
-                self.biases[node] - LEARNING_RATE * self.bias_gradients[node]
-            )
+            self.biases[node] = self.biases[node] - LEARNING_RATE * self.bias_gradients[node]
             for input in range(self.num_inputs):
                 self.weights[node][input] = (
                     self.weights[node][input] - LEARNING_RATE * self.gradients[node][input]
