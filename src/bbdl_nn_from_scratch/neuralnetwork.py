@@ -20,6 +20,13 @@ class NeuralNetwork:
         activation_config: ActivationConfig,
         loss_function: LossFunction,
     ) -> None:
+        if input_size < 1:
+            raise ValueError("input_size must be greater than 0")
+        if output_size < 1:
+            raise ValueError("output_size must be greater than 0")
+        if any(num_nodes < 1 for num_nodes in hidden_size):
+            raise ValueError("hidden layer sizes must be greater than 0")
+
         self.layers: list[Layer] = []
         for num_nodes in hidden_size:
             self.layers.append(
@@ -30,9 +37,8 @@ class NeuralNetwork:
                     num_nodes,
                 )
             )
-        self.layers.append(
-            Layer("output", activation_config[1], self.layers[-1].num_nodes, output_size)
-        )
+        previous_size = self.layers[-1].num_nodes if self.layers else input_size
+        self.layers.append(Layer("output", activation_config[1], previous_size, output_size))
         self.loss_function: LossFunction = loss_function
         self.last_inputs: list[float] | None = None  # Caching last used inputs for a forward pass
 
