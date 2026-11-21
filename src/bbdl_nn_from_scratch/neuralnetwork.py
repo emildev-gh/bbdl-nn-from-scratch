@@ -1,7 +1,10 @@
+from pathlib import Path
+
 from .layer import Layer
+from .persistence import load_network, save_network
 from .types import ActivationConfig, LossFunction, TrainingData
 
-# this currently only support these configurations:
+# this currently only supports these configurations:
 # - hidden: relu or sigmoid
 # - output: sigmoid/relu + SSE
 # - output: softmax + CCE-SOFTMAX
@@ -59,6 +62,16 @@ class NeuralNetwork:
                 self.backward(target_data[instance])
                 for layer in self.layers:
                     layer.apply_gradients()
+
+    def save(self, file_name: str) -> None:
+        save_network(self, f"./models/{file_name}")
+
+    @classmethod
+    def load(cls, path: str | Path) -> NeuralNetwork:
+        network = load_network(path)
+        if not isinstance(network, cls):
+            raise TypeError("loaded network type does not match the requested class")
+        return network
 
     def printNetwork(self):
         print(f"Input ({self.layers[0].num_inputs}) [Last used input values: {self.last_inputs}]")
