@@ -1,6 +1,10 @@
 from pathlib import Path
 
-from .helper import extract_input_data, extract_target_data
+from .helper import (
+    extract_input_data,
+    extract_target_data,
+    validate_network_configuration,
+)
 from .layer import Layer
 from .persistence import load_network, save_network
 from .types import ActivationConfig, LossFunction, TrainingData
@@ -20,12 +24,13 @@ class NeuralNetwork:
         activation_config: ActivationConfig,
         loss_function: LossFunction,
     ) -> None:
-        if input_size < 1:
-            raise ValueError("input_size must be greater than 0")
-        if output_size < 1:
-            raise ValueError("output_size must be greater than 0")
-        if any(num_nodes < 1 for num_nodes in hidden_size):
-            raise ValueError("hidden layer sizes must be greater than 0")
+        validate_network_configuration(
+            input_size,
+            hidden_size,
+            output_size,
+            activation_config,
+            loss_function,
+        )
 
         self.layers: list[Layer] = []
         for num_nodes in hidden_size:
