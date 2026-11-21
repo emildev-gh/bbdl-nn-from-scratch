@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from .helper import extract_input_data, extract_target_data
 from .layer import Layer
 from .persistence import load_network, save_network
 from .types import ActivationConfig, LossFunction, TrainingData
@@ -35,13 +36,13 @@ class NeuralNetwork:
         self.loss_function: LossFunction = loss_function
         self.last_inputs: list[float] | None = None  # Caching last used inputs for a forward pass
 
-    def forward(self, input_values: list[float]) -> list[float]:
+    def _forward(self, input_values: list[float]) -> list[float]:
         self.last_inputs = input_values.copy()
         for index, layer in enumerate(self.layers):
             layer.calc_outputs(input_values if index == 0 else self.layers[index - 1].outputs)
         return self.layers[-1].outputs
 
-    def backward(self, target_values: list[float]):
+    def _backward(self, target_values: list[float]):
         for index, layer in reversed(list(enumerate(self.layers))):
             next_layer = self.layers[index + 1] if index + 1 < len(self.layers) else None
             layer.calc_error_signals(self.loss_function, target_values, next_layer)
@@ -54,14 +55,19 @@ class NeuralNetwork:
     def train(self, training_data: TrainingData, epochs: int):
         if epochs < 1:
             raise ValueError("epochs must be greater than 0")
-        input_data = [inputs for inputs, _ in training_data]
-        target_data = [targets for _, targets in training_data]
+        input_data = extract_input_data(training_data)
+        target_data = extract_target_data(training_data)
         for _ in range(epochs):
             for instance in range(len(input_data)):
-                self.forward(input_data[instance])
-                self.backward(target_data[instance])
+                self._forward(input_data[instance])
+                self._backward(target_data[instance])
                 for layer in self.layers:
                     layer.apply_gradients()
+
+    def run(self, inputs: list[float]):
+        self._forward(inputs)
+
+    # --- Miscellaneous ----------------
 
     def save(self, file_name: str) -> None:
         save_network(self, f"./models/{file_name}")
