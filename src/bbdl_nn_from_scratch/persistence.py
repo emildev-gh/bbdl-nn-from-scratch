@@ -12,7 +12,9 @@ if TYPE_CHECKING:
 # AI generated
 
 
-def save_network(network: NeuralNetwork, path: str | Path) -> None:
+def save_network(
+    network: NeuralNetwork, path: str | Path, epochs_trained_on: int | None = None
+) -> None:
     state = {
         "input_size": network.layers[0].num_inputs,
         "hidden_size": [layer.num_nodes for layer in network.layers[:-1]],
@@ -22,6 +24,7 @@ def save_network(network: NeuralNetwork, path: str | Path) -> None:
             network.layers[-1].activation_function,
         ],
         "loss_function": network.loss_function,
+        "epochs_trained": epochs_trained_on,
         "layers": [
             {
                 "weights": layer.weights,

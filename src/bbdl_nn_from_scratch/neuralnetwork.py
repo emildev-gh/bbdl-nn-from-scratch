@@ -52,7 +52,7 @@ class NeuralNetwork:
             previous_outputs = self.last_inputs if index == 0 else self.layers[index - 1].outputs
             layer.calc_gradients(previous_outputs)
 
-    def train(self, training_data: TrainingData, epochs: int):
+    def train(self, training_data: TrainingData, epochs: int, model_name: str | None = None):
         if epochs < 1:
             raise ValueError("epochs must be greater than 0")
         input_data = extract_input_data(training_data)
@@ -63,14 +63,16 @@ class NeuralNetwork:
                 self._backward(target_data[instance])
                 for layer in self.layers:
                     layer.apply_gradients()
+        if model_name is not None:
+            self.save(model_name, epochs)
 
     def run(self, inputs: list[float]):
         self._forward(inputs)
 
     # --- Miscellaneous ----------------
 
-    def save(self, file_name: str) -> None:
-        save_network(self, f"./models/{file_name}")
+    def save(self, file_name: str, epochs_trained_on: int | None = None) -> None:
+        save_network(self, f"./models/{file_name}", epochs_trained_on)
 
     @classmethod
     def load(cls, path: str | Path) -> NeuralNetwork:
