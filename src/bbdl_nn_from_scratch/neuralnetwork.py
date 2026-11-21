@@ -66,8 +66,8 @@ class NeuralNetwork:
         if model_name is not None:
             self.save(model_name, epochs)
 
-    def run(self, inputs: list[float]):
-        self._forward(inputs)
+    def run(self, inputs: list[float]) -> list[float]:
+        return self._forward(inputs)
 
     # --- Miscellaneous ----------------
 
