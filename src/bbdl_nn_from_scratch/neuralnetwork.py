@@ -2,6 +2,7 @@ import random
 from pathlib import Path
 
 from .constants import BATCH_SIZE, RANDOM_SEED
+from .functions.optimizer import apply_gradients_adam, apply_gradients_sgd
 from .helper import (
     build_batches,
     extract_input_data,
@@ -10,7 +11,7 @@ from .helper import (
 )
 from .layer import Layer
 from .persistence import load_network, save_network
-from .types import ActivationConfig, LossFunction, TrainingData
+from .types import ActivationConfig, LossFunction, Optimizer, TrainingData
 
 # this currently only supports these configurations:
 # - hidden: relu or sigmoid
@@ -49,6 +50,7 @@ class NeuralNetwork:
         previous_size = self.layers[-1].num_nodes if self.layers else input_size
         self.layers.append(Layer("output", activation_config[1], previous_size, output_size))
         self.loss_function: LossFunction = loss_function
+        self.adam_step = 0
         self.last_inputs: list[float] | None = None  # Caching last used inputs for a forward pass
 
     def _forward(self, input_values: list[float]) -> list[float]:
@@ -67,9 +69,28 @@ class NeuralNetwork:
             previous_outputs = self.last_inputs if index == 0 else self.layers[index - 1].outputs
             layer.calc_gradients(previous_outputs, batch_size)
 
-    def train(self, training_data: TrainingData, epochs: int, model_name: str | None = None):
+    def _apply_optimizer_step(self, optimizer: Optimizer) -> None:
+        if optimizer == "adam":
+            self.adam_step += 1
+            for layer in self.layers:
+                apply_gradients_adam(layer, self.adam_step)
+        elif optimizer == "sgd":
+            for layer in self.layers:
+                apply_gradients_sgd(layer)
+        else:
+            raise ValueError(f"unsupported optimizer: {optimizer}")
+
+    def train(
+        self,
+        training_data: TrainingData,
+        epochs: int,
+        model_name: str | None = None,
+        optimizer: Optimizer = "adam",
+    ):
         if epochs < 1:
             raise ValueError("epochs must be greater than 0")
+        if optimizer not in ("adam", "sgd"):
+            raise ValueError(f"unsupported optimizer: {optimizer}")
         for _ in range(epochs):
             training_data_batched = build_batches(training_data)
             for batch in training_data_batched:
@@ -83,12 +104,10 @@ class NeuralNetwork:
                     self._backward(target_data[instance], batch_size)
                     if BATCH_SIZE == 0:
                         # SGD (stochastic gradient descent): gradients applied for every instance
-                        for layer in self.layers:
-                            layer.apply_gradients()
+                        self._apply_optimizer_step(optimizer)
                 if BATCH_SIZE > 0:
                     # batched SGD: gradients applied after each batch
-                    for layer in self.layers:
-                        layer.apply_gradients()
+                    self._apply_optimizer_step(optimizer)
         if model_name is not None:
             self.save(model_name, epochs)
 

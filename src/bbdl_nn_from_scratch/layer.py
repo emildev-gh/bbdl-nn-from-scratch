@@ -1,4 +1,3 @@
-from .constants import LEARNING_RATE
 from .functions.activation import activation
 from .functions.loss import loss
 from .helper import initialize_weights
@@ -29,6 +28,11 @@ class Layer:
         self.bias_gradients = [0.0 for _ in range(num_nodes)]
         # gradients: [node][gradient]; gradient per input
         self.gradients = [[0.0 for _ in range(num_inputs)] for _ in range(num_nodes)]
+        # Learning: ADAM
+        self.bias_m = [0.0 for _ in range(num_nodes)]
+        self.bias_v = [0.0 for _ in range(num_nodes)]
+        self.weight_m = [[0.0 for _ in range(num_inputs)] for _ in range(num_nodes)]
+        self.weight_v = [[0.0 for _ in range(num_inputs)] for _ in range(num_nodes)]
 
     def calc_outputs(self, inputs: list[float]) -> list[float]:
         if len(inputs) != self.num_inputs:
@@ -99,15 +103,4 @@ class Layer:
 
     def reset_gradients(self):
         self.bias_gradients = [0.0 for _ in range(self.num_nodes)]
-        self.gradients = [
-            [0.0 for _ in range(self.num_inputs)] for _ in range(self.num_nodes)
-        ]
-
-    def apply_gradients(self):
-        for node in range(self.num_nodes):
-            self.biases[node] -= LEARNING_RATE * self.bias_gradients[node]
-            for input in range(self.num_inputs):
-                self.weights[node][input] = (
-                    self.weights[node][input]
-                    - LEARNING_RATE * self.gradients[node][input]
-                )
+        self.gradients = [[0.0 for _ in range(self.num_inputs)] for _ in range(self.num_nodes)]
