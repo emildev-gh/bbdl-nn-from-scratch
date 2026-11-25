@@ -7,8 +7,6 @@ from .constants import BATCH_SIZE, RANDOM_SEED
 from .functions.optimizer import apply_gradients_adam, apply_gradients_sgd
 from .helper import (
     build_batches,
-    extract_input_data,
-    extract_target_data,
     validate_network_configuration,
 )
 from .layer import Layer
@@ -106,13 +104,11 @@ class NeuralNetwork:
             raise ValueError(f"unsupported optimizer: {optimizer}")
         for _ in range(epochs):
             training_data_batched = build_batches(training_data)
-            for batch in training_data_batched:
+            for input_data, target_data in training_data_batched:
                 for layer in self.layers:
                     layer.reset_gradients()
-                input_data = extract_input_data(batch)
-                target_data = extract_target_data(batch)
                 if BATCH_SIZE == 0:
-                    for instance in range(len(batch)):
+                    for instance in range(len(input_data)):
                         self._forward_vectorized(input_data[instance : instance + 1])
                         self._backward_vectorized(target_data[instance : instance + 1])
                         self._apply_optimizer_step(optimizer)

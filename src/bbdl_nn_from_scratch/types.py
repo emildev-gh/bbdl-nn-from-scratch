@@ -14,5 +14,5 @@ type LossFunction = Literal["SSE", "CCE-SOFTMAX"]
 type Optimizer = Literal["ADAM", "SGD"]
 
 type InferenceData = list[list[float]]
-type TrainingData = list[tuple[list[float], list[float]]]
+type TrainingData = tuple[FloatArray, FloatArray]
 type TrainingDataBatched = list[TrainingData]

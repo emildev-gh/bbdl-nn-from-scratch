@@ -44,22 +44,17 @@ def initialize_weights(
 
 
 def build_batches(data: TrainingData) -> TrainingDataBatched:
-    shuffled_data = data.copy()
-    random.shuffle(shuffled_data)
+    inputs, targets = data
+    indices = list(range(len(inputs)))
+    random.shuffle(indices)
+    shuffled_indices = np.asarray(indices, dtype=int)
     if BATCH_SIZE == 0:
-        return [shuffled_data]
+        return [(inputs[shuffled_indices], targets[shuffled_indices])]
     batches: TrainingDataBatched = []
-    for start in range(0, len(shuffled_data), BATCH_SIZE):
-        batches.append(shuffled_data[start : start + BATCH_SIZE])
+    for start in range(0, len(inputs), BATCH_SIZE):
+        batch_indices = shuffled_indices[start : start + BATCH_SIZE]
+        batches.append((inputs[batch_indices], targets[batch_indices]))
     return batches
-
-
-def extract_input_data(training_data: TrainingData) -> FloatArray:
-    return np.asarray([inputs for inputs, _ in training_data], dtype=float)
-
-
-def extract_target_data(training_data: TrainingData) -> FloatArray:
-    return np.asarray([targets for _, targets in training_data], dtype=float)
 
 
 def validate_network_configuration(
