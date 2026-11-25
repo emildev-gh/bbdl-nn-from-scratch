@@ -1,4 +1,4 @@
-from math import sqrt
+import numpy as np
 
 from ..constants import ALPHA, BETA1, BETA2, EPSILON, LEARNING_RATE
 from ..layer import Layer
@@ -18,22 +18,18 @@ def apply_gradients_adam(layer: Layer, step: int) -> None:
     bias_correction1 = 1.0 - BETA1**step
     bias_correction2 = 1.0 - BETA2**step
 
-    for node in range(layer.num_nodes):
-        gradient = layer.bias_gradients[node]
-        layer.bias_m[node] = BETA1 * layer.bias_m[node] + (1.0 - BETA1) * gradient
-        layer.bias_v[node] = BETA2 * layer.bias_v[node] + (1.0 - BETA2) * gradient**2
-        corrected_m = layer.bias_m[node] / bias_correction1
-        corrected_v = layer.bias_v[node] / bias_correction2
-        layer.biases[node] -= ALPHA * corrected_m / (sqrt(corrected_v) + EPSILON)
+    layer.bias_m *= BETA1
+    layer.bias_m += (1.0 - BETA1) * layer.bias_gradients
+    layer.bias_v *= BETA2
+    layer.bias_v += (1.0 - BETA2) * layer.bias_gradients**2
+    corrected_m = layer.bias_m / bias_correction1
+    corrected_v = layer.bias_v / bias_correction2
+    layer.biases -= ALPHA * corrected_m / (np.sqrt(corrected_v) + EPSILON)
 
-        for input_node in range(layer.num_inputs):
-            gradient = layer.gradients[node][input_node]
-            layer.weight_m[node][input_node] = (
-                BETA1 * layer.weight_m[node][input_node] + (1.0 - BETA1) * gradient
-            )
-            layer.weight_v[node][input_node] = (
-                BETA2 * layer.weight_v[node][input_node] + (1.0 - BETA2) * gradient**2
-            )
-            corrected_m = layer.weight_m[node][input_node] / bias_correction1
-            corrected_v = layer.weight_v[node][input_node] / bias_correction2
-            layer.weights[node][input_node] -= ALPHA * corrected_m / (sqrt(corrected_v) + EPSILON)
+    layer.weight_m *= BETA1
+    layer.weight_m += (1.0 - BETA1) * layer.gradients
+    layer.weight_v *= BETA2
+    layer.weight_v += (1.0 - BETA2) * layer.gradients**2
+    corrected_m = layer.weight_m / bias_correction1
+    corrected_v = layer.weight_v / bias_correction2
+    layer.weights -= ALPHA * corrected_m / (np.sqrt(corrected_v) + EPSILON)
