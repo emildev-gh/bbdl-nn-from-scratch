@@ -42,11 +42,11 @@ def activation(
     derivative: bool = False,
 ) -> float:
     match function:
-        case "relu":
+        case "RELU":
             return relu_derivative(value) if derivative else relu(value)
-        case "sigmoid":
+        case "SIGMOID":
             return sigmoid_derivative(value) if derivative else sigmoid(value)
-        case "softmax":
+        case "SOFTMAX":
             if all_values is None:
                 raise TypeError("softmax requires all output values")
             return (

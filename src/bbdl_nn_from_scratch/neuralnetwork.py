@@ -41,14 +41,14 @@ class NeuralNetwork:
         for num_nodes in hidden_size:
             self.layers.append(
                 Layer(
-                    "hidden",
+                    "HIDDEN",
                     activation_config[0],
                     input_size if not self.layers else self.layers[-1].num_nodes,
                     num_nodes,
                 )
             )
         previous_size = self.layers[-1].num_nodes if self.layers else input_size
-        self.layers.append(Layer("output", activation_config[1], previous_size, output_size))
+        self.layers.append(Layer("OUTPUT", activation_config[1], previous_size, output_size))
         self.loss_function: LossFunction = loss_function
         self.adam_step = 0
         self.last_inputs: list[float] | None = None  # Caching last used inputs for a forward pass
@@ -70,11 +70,11 @@ class NeuralNetwork:
             layer.calc_gradients(previous_outputs, batch_size)
 
     def _apply_optimizer_step(self, optimizer: Optimizer) -> None:
-        if optimizer == "adam":
+        if optimizer == "ADAM":
             self.adam_step += 1
             for layer in self.layers:
                 apply_gradients_adam(layer, self.adam_step)
-        elif optimizer == "sgd":
+        elif optimizer == "SGD":
             for layer in self.layers:
                 apply_gradients_sgd(layer)
         else:
@@ -85,11 +85,11 @@ class NeuralNetwork:
         training_data: TrainingData,
         epochs: int,
         model_name: str | None = None,
-        optimizer: Optimizer = "adam",
+        optimizer: Optimizer = "ADAM",
     ):
         if epochs < 1:
             raise ValueError("epochs must be greater than 0")
-        if optimizer not in ("adam", "sgd"):
+        if optimizer not in ("ADAM", "SGD"):
             raise ValueError(f"unsupported optimizer: {optimizer}")
         for _ in range(epochs):
             training_data_batched = build_batches(training_data)

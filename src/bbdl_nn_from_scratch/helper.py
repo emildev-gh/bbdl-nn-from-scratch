@@ -22,7 +22,7 @@ def initialize_weights(
     if num_nodes < 1:
         raise ValueError("num_nodes must be greater than 0")
 
-    if activation_function == "relu":
+    if activation_function == "RELU":
         standard_deviation = sqrt(2.0 / num_inputs)
         weights = [
             [random.gauss(0.0, standard_deviation) for _ in range(num_inputs)]
@@ -73,13 +73,13 @@ def validate_network_configuration(
         raise ValueError("output_size must be greater than 0")
     if any(num_nodes < 1 for num_nodes in hidden_size):
         raise ValueError("hidden layer sizes must be greater than 0")
-    if hidden_size and activation_config[0] not in ("relu", "sigmoid"):
-        raise ValueError("hidden activation must be 'relu' or 'sigmoid'")
+    if hidden_size and activation_config[0] not in ("RELU", "SIGMOID"):
+        raise ValueError("hidden activation must be 'RELU' or 'SIGMOID'")
     if loss_function == "SSE":
-        if activation_config[1] not in ("relu", "sigmoid"):
-            raise ValueError("SSE requires a 'relu' or 'sigmoid' output activation")
+        if activation_config[1] not in ("RELU", "SIGMOID"):
+            raise ValueError("SSE requires a 'RELU' or 'SIGMOID' output activation")
     elif loss_function == "CCE-SOFTMAX":
-        if activation_config[1] != "softmax":
-            raise ValueError("CCE-SOFTMAX requires a 'softmax' output activation")
+        if activation_config[1] != "SOFTMAX":
+            raise ValueError("CCE-SOFTMAX requires a 'SOFTMAX' output activation")
     else:
         raise ValueError(f"Unsupported loss function: {loss_function}")

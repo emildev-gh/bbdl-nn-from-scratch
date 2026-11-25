@@ -1,12 +1,12 @@
 from typing import Literal
 
-type LayerType = Literal["hidden", "output"]
+type LayerType = Literal["HIDDEN", "OUTPUT"]
 
-type ActivationFunction = Literal["relu", "sigmoid", "softmax"]
+type ActivationFunction = Literal["RELU", "SIGMOID", "SOFTMAX"]
 type ActivationConfig = tuple[ActivationFunction, ActivationFunction]
 
 type LossFunction = Literal["SSE", "CCE-SOFTMAX"]
-type Optimizer = Literal["adam", "sgd"]
+type Optimizer = Literal["ADAM", "SGD"]
 
 type InferenceData = list[list[float]]
 type TrainingData = list[tuple[list[float], list[float]]]

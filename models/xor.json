@@ -5,8 +5,8 @@
   ],
   "output_size": 2,
   "activation_config": [
-    "relu",
-    "softmax"
+    "RELU",
+    "SOFTMAX"
   ],
   "loss_function": "CCE-SOFTMAX",
   "epochs_trained": 100000,

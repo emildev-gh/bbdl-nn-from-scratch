@@ -53,7 +53,7 @@ class Layer:
     def calc_error_signals(
         self, loss_function: LossFunction, target_value: list[float], next_layer: Layer | None
     ):
-        if self.layer_type == "output":
+        if self.layer_type == "OUTPUT":
             for node in range(self.num_nodes):
                 derived_activation = (
                     activation(self.activation_function, self.net[node], self.net, True)
