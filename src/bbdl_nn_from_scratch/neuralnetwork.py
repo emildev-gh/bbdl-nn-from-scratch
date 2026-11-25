@@ -1,8 +1,9 @@
 import random
 from pathlib import Path
 
-from .constants import RANDOM_SEED
+from .constants import BATCH_SIZE, RANDOM_SEED
 from .helper import (
+    build_batches,
     extract_input_data,
     extract_target_data,
     validate_network_configuration,
@@ -56,7 +57,7 @@ class NeuralNetwork:
             layer.calc_outputs(input_values if index == 0 else self.layers[index - 1].outputs)
         return self.layers[-1].outputs
 
-    def _backward(self, target_values: list[float]):
+    def _backward(self, target_values: list[float], batch_size: int = 0):
         for index, layer in reversed(list(enumerate(self.layers))):
             next_layer = self.layers[index + 1] if index + 1 < len(self.layers) else None
             layer.calc_error_signals(self.loss_function, target_values, next_layer)
@@ -64,19 +65,30 @@ class NeuralNetwork:
             raise ValueError("forward must be called before backward")
         for index, layer in enumerate(self.layers):
             previous_outputs = self.last_inputs if index == 0 else self.layers[index - 1].outputs
-            layer.calc_gradients(previous_outputs)
+            layer.calc_gradients(previous_outputs, batch_size)
 
     def train(self, training_data: TrainingData, epochs: int, model_name: str | None = None):
         if epochs < 1:
             raise ValueError("epochs must be greater than 0")
-        input_data = extract_input_data(training_data)
-        target_data = extract_target_data(training_data)
         for _ in range(epochs):
-            for instance in range(len(input_data)):
-                self._forward(input_data[instance])
-                self._backward(target_data[instance])
+            training_data_batched = build_batches(training_data)
+            for batch in training_data_batched:
                 for layer in self.layers:
-                    layer.apply_gradients()
+                    layer.reset_gradients()
+                input_data = extract_input_data(batch)
+                target_data = extract_target_data(batch)
+                batch_size = len(batch) if BATCH_SIZE > 0 else 0
+                for instance in range(len(input_data)):
+                    self._forward(input_data[instance])
+                    self._backward(target_data[instance], batch_size)
+                    if BATCH_SIZE == 0:
+                        # SGD (stochastic gradient descent): gradients applied for every instance
+                        for layer in self.layers:
+                            layer.apply_gradients()
+                if BATCH_SIZE > 0:
+                    # batched SGD: gradients applied after each batch
+                    for layer in self.layers:
+                        layer.apply_gradients()
         if model_name is not None:
             self.save(model_name, epochs)
 

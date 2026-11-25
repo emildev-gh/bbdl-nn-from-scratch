@@ -1,12 +1,14 @@
 import random
 from math import sqrt
 
+from .constants import BATCH_SIZE
 from .types import (
     ActivationConfig,
     ActivationFunction,
     InferenceData,
     LossFunction,
     TrainingData,
+    TrainingDataBatched,
 )
 
 
@@ -29,8 +31,7 @@ def initialize_weights(
     else:
         limit = 1.0 / sqrt(num_inputs)
         weights = [
-            [random.uniform(-limit, limit) for _ in range(num_inputs)]
-            for _ in range(num_nodes)
+            [random.uniform(-limit, limit) for _ in range(num_inputs)] for _ in range(num_nodes)
         ]
 
     for node_weights in weights:
@@ -38,6 +39,17 @@ def initialize_weights(
             if weight == 0.0:
                 node_weights[index] = 0.01
     return weights
+
+
+def build_batches(data: TrainingData) -> TrainingDataBatched:
+    shuffled_data = data.copy()
+    random.shuffle(shuffled_data)
+    if BATCH_SIZE == 0:
+        return [shuffled_data]
+    batches: TrainingDataBatched = []
+    for start in range(0, len(shuffled_data), BATCH_SIZE):
+        batches.append(shuffled_data[start : start + BATCH_SIZE])
+    return batches
 
 
 def extract_input_data(training_data: TrainingData) -> InferenceData:

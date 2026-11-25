@@ -9,3 +9,4 @@ type LossFunction = Literal["SSE", "CCE-SOFTMAX"]
 
 type InferenceData = list[list[float]]
 type TrainingData = list[tuple[list[float], list[float]]]
+type TrainingDataBatched = list[TrainingData]

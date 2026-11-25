@@ -76,20 +76,38 @@ class Layer:
                 )
                 self.error_signals[node] = derived_activation * next_layer_weighted_error_signals
 
-    def calc_gradients(self, prev_outputs: list[float]):
+    def calc_gradients(self, prev_outputs: list[float], batch_size: int = 0):
         if len(prev_outputs) != self.num_inputs:
             raise ValueError("previous outputs don't match num_inputs")
+        if batch_size < 0:
+            raise ValueError("batch_size cannot be negative")
+        # divide each sample's contribution so summing a batch gives its mean gradient.
+        scale = 1.0 if batch_size == 0 else 1.0 / batch_size
+        # single-sample mode replaces the previous gradient; batch mode accumulates.
         for node in range(self.num_nodes):
-            self.bias_gradients[node] = self.error_signals[node]
+            bias_gradient = self.error_signals[node] * scale
+            if batch_size == 0:
+                self.bias_gradients[node] = bias_gradient
+            else:
+                self.bias_gradients[node] += bias_gradient
             for input_node in range(self.num_inputs):
-                self.gradients[node][input_node] = (
-                    self.error_signals[node] * prev_outputs[input_node]
-                )
+                gradient = self.error_signals[node] * prev_outputs[input_node] * scale
+                if batch_size == 0:
+                    self.gradients[node][input_node] = gradient
+                else:
+                    self.gradients[node][input_node] += gradient
+
+    def reset_gradients(self):
+        self.bias_gradients = [0.0 for _ in range(self.num_nodes)]
+        self.gradients = [
+            [0.0 for _ in range(self.num_inputs)] for _ in range(self.num_nodes)
+        ]
 
     def apply_gradients(self):
         for node in range(self.num_nodes):
-            self.biases[node] = self.biases[node] - LEARNING_RATE * self.bias_gradients[node]
+            self.biases[node] -= LEARNING_RATE * self.bias_gradients[node]
             for input in range(self.num_inputs):
                 self.weights[node][input] = (
-                    self.weights[node][input] - LEARNING_RATE * self.gradients[node][input]
+                    self.weights[node][input]
+                    - LEARNING_RATE * self.gradients[node][input]
                 )
