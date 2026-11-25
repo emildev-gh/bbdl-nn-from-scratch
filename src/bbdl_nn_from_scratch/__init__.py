@@ -1,5 +1,5 @@
-from .tasks import task3
+from .tasks import task4
 
 
 def main() -> None:
-    task3.main()
+    task4.main()
