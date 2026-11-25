@@ -1,5 +1,10 @@
 from typing import Literal
 
+import numpy as np
+from numpy.typing import NDArray
+
+type FloatArray = NDArray[np.float64]
+
 type LayerType = Literal["HIDDEN", "OUTPUT"]
 
 type ActivationFunction = Literal["RELU", "SIGMOID", "SOFTMAX"]

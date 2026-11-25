@@ -1,6 +1,30 @@
 from math import exp
 
-from ..types import ActivationFunction
+import numpy as np
+
+from ..types import ActivationFunction, FloatArray
+
+
+def activation_vectorized(
+    function: ActivationFunction, values: FloatArray, derivative: bool = False
+) -> FloatArray:
+    match function:
+        case "RELU":
+            return (values > 0.0).astype(float) if derivative else np.maximum(values, 0.0)
+        case "SIGMOID":
+            outputs = np.empty_like(values)
+            positive = values >= 0.0
+            outputs[positive] = 1.0 / (1.0 + np.exp(-values[positive]))
+            exp_values = np.exp(values[~positive])
+            outputs[~positive] = exp_values / (1.0 + exp_values)
+            return outputs * (1.0 - outputs) if derivative else outputs
+        case "SOFTMAX":
+            shifted_values = values - np.max(values, axis=1, keepdims=True)
+            exp_values = np.exp(shifted_values)
+            outputs = exp_values / np.sum(exp_values, axis=1, keepdims=True)
+            return outputs * (1.0 - outputs) if derivative else outputs
+        case _:
+            raise ValueError(f"Unsupported activation function: {function}")
 
 
 def relu(value: float) -> float:

@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+import numpy as np
+
 from .types import ActivationConfig, LossFunction
 
 if TYPE_CHECKING:
@@ -27,8 +29,8 @@ def save_network(
         "epochs_trained": epochs_trained_on,
         "layers": [
             {
-                "weights": layer.weights,
-                "biases": layer.biases,
+                "weights": layer.weights.tolist(),
+                "biases": layer.biases.tolist(),
             }
             for layer in network.layers
         ],
@@ -67,14 +69,12 @@ def load_network(path: str | Path) -> NeuralNetwork:
         raise ValueError("model layer count does not match the network configuration")
 
     for layer, saved_layer in zip(network.layers, saved_layers, strict=True):
-        weights = saved_layer["weights"]
-        biases = saved_layer["biases"]
+        weights = np.asarray(saved_layer["weights"], dtype=float)
+        biases = np.asarray(saved_layer["biases"], dtype=float)
 
-        if len(weights) != layer.num_nodes or any(
-            len(node_weights) != layer.num_inputs for node_weights in weights
-        ):
+        if weights.shape != (layer.num_nodes, layer.num_inputs):
             raise ValueError("model weight shape does not match the network configuration")
-        if len(biases) != layer.num_nodes:
+        if biases.shape != (layer.num_nodes,):
             raise ValueError("model bias shape does not match the network configuration")
 
         layer.weights = weights

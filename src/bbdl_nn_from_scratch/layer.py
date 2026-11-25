@@ -1,7 +1,9 @@
-from .functions.activation import activation
+import numpy as np
+
+from .functions.activation import activation_vectorized
 from .functions.loss import loss
 from .helper import initialize_weights
-from .types import ActivationFunction, LayerType, LossFunction
+from .types import ActivationFunction, FloatArray, LayerType, LossFunction
 
 
 class Layer:
@@ -15,92 +17,65 @@ class Layer:
         # Layer
         self.layer_type: LayerType = layer_type
         self.activation_function: ActivationFunction = activation_function
-        self.num_inputs = num_inputs
-        self.num_nodes = num_nodes
-        self.biases = [0.0 for _ in range(num_nodes)]
+        self.num_inputs: int = num_inputs
+        self.num_nodes: int = num_nodes
+        self.biases: FloatArray = np.zeros(num_nodes)
         # weights: [node][weight]; weight per input
-        self.weights = initialize_weights(activation_function, num_inputs, num_nodes)
+        self.weights: FloatArray = initialize_weights(activation_function, num_inputs, num_nodes)
         # Inference
-        self.outputs = [0.0 for _ in range(num_nodes)]
-        self.net = [0.0 for _ in range(num_nodes)]
+        self.outputs: FloatArray = np.zeros((1, num_nodes))
+        self.net: FloatArray = np.zeros((1, num_nodes))
         # Learning
-        self.error_signals = [0.0 for _ in range(num_nodes)]
-        self.bias_gradients = [0.0 for _ in range(num_nodes)]
+        self.error_signals: FloatArray = np.zeros((1, num_nodes))
+        self.bias_gradients: FloatArray = np.zeros(num_nodes)
         # gradients: [node][gradient]; gradient per input
-        self.gradients = [[0.0 for _ in range(num_inputs)] for _ in range(num_nodes)]
+        self.gradients: FloatArray = np.zeros((num_nodes, num_inputs))
         # Learning: ADAM
-        self.bias_m = [0.0 for _ in range(num_nodes)]
-        self.bias_v = [0.0 for _ in range(num_nodes)]
-        self.weight_m = [[0.0 for _ in range(num_inputs)] for _ in range(num_nodes)]
-        self.weight_v = [[0.0 for _ in range(num_inputs)] for _ in range(num_nodes)]
+        self.bias_m: FloatArray = np.zeros(num_nodes)
+        self.bias_v: FloatArray = np.zeros(num_nodes)
+        self.weight_m: FloatArray = np.zeros((num_nodes, num_inputs))
+        self.weight_v: FloatArray = np.zeros((num_nodes, num_inputs))
 
-    def calc_outputs(self, inputs: list[float]) -> list[float]:
-        if len(inputs) != self.num_inputs:
-            raise ValueError("num_inputs doesn't match len(inputs)")
+    def calc_outputs(self, inputs: FloatArray) -> FloatArray:
+        if inputs.ndim != 2 or inputs.shape[1] != self.num_inputs:
+            raise ValueError("inputs must have shape (batch_size, num_inputs)")
 
-        # calculate nets
-        for node in range(self.num_nodes):
-            weighted_inputs = 0.0
-            for input_index, input_value in enumerate(inputs):
-                weighted_inputs += input_value * self.weights[node][input_index]
-            self.net[node] = weighted_inputs + self.biases[node]
-
-        # calculate outputs
-        for node in range(self.num_nodes):
-            self.outputs[node] = activation(self.activation_function, self.net[node], self.net)
+        self.net = inputs @ self.weights.T + self.biases
+        self.outputs = activation_vectorized(self.activation_function, self.net)
         return self.outputs
 
     def calc_error_signals(
-        self, loss_function: LossFunction, target_value: list[float], next_layer: Layer | None
-    ):
+        self, loss_function: LossFunction, target_values: FloatArray, next_layer: Layer | None
+    ) -> None:
         if self.layer_type == "OUTPUT":
-            for node in range(self.num_nodes):
-                derived_activation = (
-                    activation(self.activation_function, self.net[node], self.net, True)
-                    if loss_function == "SSE"
-                    else None
-                )  # this is only needed if using SSE in output layer
-                self.error_signals[node] = loss(
-                    loss_function,
-                    self.outputs[node],
-                    target_value[node],
-                    derived_activation,
+            if loss_function == "CCE-SOFTMAX":
+                self.error_signals = self.outputs - target_values
+            else:
+                activation_derivatives = activation_vectorized(
+                    self.activation_function, self.net, derivative=True
+                )
+                self.error_signals = np.asarray(
+                    loss(loss_function, self.outputs, target_values, activation_derivatives),
+                    dtype=float,
                 )
         else:
             if next_layer is None:
                 raise ValueError("next_layer is needed for hidden layers")
-            for node in range(self.num_nodes):
-                next_layer_weighted_error_signals = 0.0
-                for next_node in range(next_layer.num_nodes):
-                    next_layer_weighted_error_signals += (
-                        next_layer.weights[next_node][node] * next_layer.error_signals[next_node]
-                    )
-                derived_activation = activation(
-                    self.activation_function, self.net[node], self.net, True
-                )
-                self.error_signals[node] = derived_activation * next_layer_weighted_error_signals
+            activation_derivatives = activation_vectorized(
+                self.activation_function, self.net, derivative=True
+            )
+            self.error_signals = (
+                next_layer.error_signals @ next_layer.weights
+            ) * activation_derivatives
 
-    def calc_gradients(self, prev_outputs: list[float], batch_size: int = 0):
-        if len(prev_outputs) != self.num_inputs:
+    def calc_gradients(self, prev_outputs: FloatArray) -> None:
+        if prev_outputs.ndim != 2 or prev_outputs.shape[1] != self.num_inputs:
             raise ValueError("previous outputs don't match num_inputs")
-        if batch_size < 0:
-            raise ValueError("batch_size cannot be negative")
-        # divide each sample's contribution so summing a batch gives its mean gradient.
-        scale = 1.0 if batch_size == 0 else 1.0 / batch_size
-        # single-sample mode replaces the previous gradient; batch mode accumulates.
-        for node in range(self.num_nodes):
-            bias_gradient = self.error_signals[node] * scale
-            if batch_size == 0:
-                self.bias_gradients[node] = bias_gradient
-            else:
-                self.bias_gradients[node] += bias_gradient
-            for input_node in range(self.num_inputs):
-                gradient = self.error_signals[node] * prev_outputs[input_node] * scale
-                if batch_size == 0:
-                    self.gradients[node][input_node] = gradient
-                else:
-                    self.gradients[node][input_node] += gradient
+        if len(prev_outputs) != len(self.error_signals):
+            raise ValueError("previous outputs and error signals must have the same batch size")
+        self.gradients = self.error_signals.T @ prev_outputs / len(prev_outputs)
+        self.bias_gradients = np.mean(self.error_signals, axis=0)
 
-    def reset_gradients(self):
-        self.bias_gradients = [0.0 for _ in range(self.num_nodes)]
-        self.gradients = [[0.0 for _ in range(self.num_inputs)] for _ in range(self.num_nodes)]
+    def reset_gradients(self) -> None:
+        self.bias_gradients = np.zeros(self.num_nodes)
+        self.gradients = np.zeros((self.num_nodes, self.num_inputs))

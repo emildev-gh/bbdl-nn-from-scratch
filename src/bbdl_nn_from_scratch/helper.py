@@ -1,11 +1,13 @@
 import random
 from math import sqrt
 
+import numpy as np
+
 from .constants import BATCH_SIZE
 from .types import (
     ActivationConfig,
     ActivationFunction,
-    InferenceData,
+    FloatArray,
     LossFunction,
     TrainingData,
     TrainingDataBatched,
@@ -16,7 +18,7 @@ def initialize_weights(
     activation_function: ActivationFunction,
     num_inputs: int,
     num_nodes: int,
-) -> list[list[float]]:
+) -> FloatArray:
     if num_inputs < 1:
         raise ValueError("num_inputs must be greater than 0")
     if num_nodes < 1:
@@ -38,7 +40,7 @@ def initialize_weights(
         for index, weight in enumerate(node_weights):
             if weight == 0.0:
                 node_weights[index] = 0.01
-    return weights
+    return np.asarray(weights, dtype=float)
 
 
 def build_batches(data: TrainingData) -> TrainingDataBatched:
@@ -52,12 +54,12 @@ def build_batches(data: TrainingData) -> TrainingDataBatched:
     return batches
 
 
-def extract_input_data(training_data: TrainingData) -> InferenceData:
-    return [inputs for inputs, _ in training_data]
+def extract_input_data(training_data: TrainingData) -> FloatArray:
+    return np.asarray([inputs for inputs, _ in training_data], dtype=float)
 
 
-def extract_target_data(training_data: TrainingData) -> InferenceData:
-    return [targets for _, targets in training_data]
+def extract_target_data(training_data: TrainingData) -> FloatArray:
+    return np.asarray([targets for _, targets in training_data], dtype=float)
 
 
 def validate_network_configuration(
