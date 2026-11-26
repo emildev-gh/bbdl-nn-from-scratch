@@ -7,7 +7,9 @@ from .constants import BATCH_SIZE, RANDOM_SEED
 from .functions.optimizer import apply_gradients_adam, apply_gradients_sgd
 from .helper import (
     build_batches,
+    calc_accuracy,
     validate_network_configuration,
+    validate_training_run,
 )
 from .layer import Layer
 from .persistence import load_network, save_network
@@ -94,15 +96,23 @@ class NeuralNetwork:
     def train(
         self,
         training_data: TrainingData,
-        epochs: int,
+        epochs: int | None = None,
         model_name: str | None = None,
         optimizer: Optimizer = "ADAM",
-    ):
-        if epochs < 1:
-            raise ValueError("epochs must be greater than 0")
-        if optimizer not in ("ADAM", "SGD"):
-            raise ValueError(f"unsupported optimizer: {optimizer}")
-        for _ in range(epochs):
+        desired_accuracy: float | None = None,
+        validation_data: TrainingData | None = None,
+    ) -> float | None:
+        validate_training_run(
+            training_data,
+            epochs,
+            optimizer,
+            desired_accuracy,
+            validation_data,
+        )
+
+        completed_epochs = 0
+        current_accuracy: float | None = None
+        while epochs is None or completed_epochs < epochs:
             training_data_batched = build_batches(training_data)
             for input_data, target_data in training_data_batched:
                 for layer in self.layers:
@@ -116,8 +126,14 @@ class NeuralNetwork:
                     self._forward_vectorized(input_data)
                     self._backward_vectorized(target_data)
                     self._apply_optimizer_step(optimizer)
+            completed_epochs += 1
+            if desired_accuracy is not None and validation_data is not None:
+                current_accuracy = calc_accuracy(self, validation_data)
+                if current_accuracy >= desired_accuracy:
+                    break
         if model_name is not None:
-            self.save(model_name, epochs)
+            self.save(model_name, completed_epochs)
+        return current_accuracy
 
     def run(self, inputs: list[float]) -> list[float]:
         return self._forward(inputs)

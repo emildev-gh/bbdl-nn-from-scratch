@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import random
 from math import sqrt
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -9,9 +12,13 @@ from .types import (
     ActivationFunction,
     FloatArray,
     LossFunction,
+    Optimizer,
     TrainingData,
     TrainingDataBatched,
 )
+
+if TYPE_CHECKING:
+    from .neuralnetwork import NeuralNetwork
 
 
 def initialize_weights(
@@ -55,6 +62,49 @@ def build_batches(data: TrainingData) -> TrainingDataBatched:
         batch_indices = shuffled_indices[start : start + BATCH_SIZE]
         batches.append((inputs[batch_indices], targets[batch_indices]))
     return batches
+
+
+def calc_accuracy(network: NeuralNetwork, validation_data: TrainingData) -> float:
+    inputs, targets = validation_data
+    if inputs.ndim != 2 or targets.ndim != 2:
+        raise ValueError("validation inputs and targets must be two-dimensional")
+    if len(inputs) == 0:
+        raise ValueError("validation data must not be empty")
+    if len(inputs) != len(targets):
+        raise ValueError("validation inputs and targets must have the same number of samples")
+
+    target_labels = np.argmax(targets, axis=1)
+    correct = 0
+    for input_data, target_label in zip(inputs, target_labels, strict=True):
+        prediction = network.run(input_data.tolist())
+        if len(prediction) != targets.shape[1]:
+            raise ValueError("network output size must match the number of target classes")
+        correct += int(np.argmax(prediction) == target_label)
+    return float(correct / len(inputs) * 100.0)
+
+
+def validate_training_run(
+    training_data: TrainingData,
+    epochs: int | None,
+    optimizer: Optimizer,
+    desired_accuracy: float | None,
+    validation_data: TrainingData | None,
+) -> None:
+    if epochs is None and desired_accuracy is None:
+        raise ValueError("epochs or desired_accuracy must be provided")
+    if epochs is not None and (isinstance(epochs, bool) or not isinstance(epochs, int)):
+        raise TypeError("epochs must be an integer or None")
+    if epochs is not None and epochs < 1:
+        raise ValueError("epochs must be greater than 0")
+    if optimizer not in ("ADAM", "SGD"):
+        raise ValueError(f"unsupported optimizer: {optimizer}")
+    if desired_accuracy is not None:
+        if not 0.0 <= desired_accuracy <= 100.0:
+            raise ValueError("desired_accuracy must be between 0 and 100")
+        if validation_data is None:
+            raise ValueError("validation_data is required with desired_accuracy")
+        if len(training_data[0]) == 0 or len(validation_data[0]) == 0:
+            raise ValueError("training and validation data must not be empty")
 
 
 def validate_network_configuration(
